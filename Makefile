@@ -1,7 +1,7 @@
 .PHONY: build test debug
 build:
-	go build -o proxy ./cmd/httptrace
-	chmod +x httptrace
+	go build -o httpcache ./cmd/httpcache
+	chmod +x httpcache
 
 test:
 	go test ./...
@@ -10,7 +10,7 @@ debug:
 	echo "testing"
 
 deploy: build
-	nohup ./httptrace > trace.log 2>&1 & echo $$! > save_pid.txt
+	nohup ./httpcache > trace.log 2>&1 & echo $$! > save_pid.txt
 
 kill:
 	kill -9 $$(cat save_pid.txt) && rm save_pid.txt
