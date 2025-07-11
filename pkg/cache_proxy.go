@@ -7,40 +7,29 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
-type Middleware func(next http.RoundTripper) http.RoundTripper
-
-type CacheProxy struct {
-	Client  *Client
-	Proxy   *httputil.ReverseProxy
-	handler http.Handler
-}
-
-func NewCacheProxy(host string) *CacheProxy {
+func NewCacheProxy(host string, redisServer map[string]string) http.Handler {
 	domain, err := url.Parse(host)
 	if err != nil {
 		log.Fatalf("Failed to parse URL: %v", err)
+		panic(err)
 	}
 	rp := httputil.NewSingleHostReverseProxy(domain)
 	client, err := NewClient(
-		// TODO: put redis options here
-		ClientWithAdapter(NewRedisAdapter(nil)),
-		ClientWithMethods([]string{http.MethodGet, http.MethodPut}),
+		ClientWithAdapter(NewRedisAdapter(&redis.RingOptions{
+			Addrs: redisServer,
+		})),
+		// cache both GET and PUT methods
+		ClientWithMethods([]string{http.MethodGet, http.MethodPost}),
+		// cache responses for 24 hours
 		ClientWithTTL(24*time.Hour),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
+		panic(err)
 	}
-	handler := client.HTTPHandlerMiddleware(rp)
-	// rp.Transport = client.RoundTripperMiddleware(http.DefaultTransport)
-	return &CacheProxy{
-		Client:  client,
-		Proxy:   rp,
-		handler: handler,
-	}
-}
-
-func (cp *CacheProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	cp.handler.ServeHTTP(w, r)
+	return client.HTTPHandlerMiddleware(rp)
 }
