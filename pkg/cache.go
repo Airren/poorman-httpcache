@@ -22,10 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package cache
+package pkg
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -75,13 +76,13 @@ type ClientOption func(c *Client) error
 type Adapter interface {
 	// Get retrieves the cached response by a given key. It also
 	// returns true or false, whether it exists or not.
-	Get(key uint64) ([]byte, bool)
+	Get(ctx context.Context, key uint64) ([]byte, bool)
 
 	// Set caches a response for a given key until an expiration date.
 	Set(key uint64, response []byte, expiration time.Time)
 
 	// Release frees cache for a given key.
-	Release(key uint64)
+	Release(ctx context.Context, key uint64)
 }
 
 // Middleware is the HTTP cache middleware handler.
@@ -92,7 +93,6 @@ func (c *Client) HTTPHandlerMiddleware(next http.Handler) http.Handler {
 	}
 }
 
-
 type cacheHTTPHandler struct {
 	next   http.Handler
 	client *Client
@@ -102,74 +102,74 @@ func (h *cacheHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c := h.client
 	next := h.next
 	if c.cacheableMethod(r.Method) {
-			sortURLParams(r.URL)
-			key := generateKey(r.URL.String())
-			if r.Method == http.MethodPost && r.Body != nil {
-				body, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-				if err != nil {
-					next.ServeHTTP(w, r)
-					return
-				}
-				reader := io.NopCloser(bytes.NewBuffer(body))
-				key = generateKeyWithBody(r.URL.String(), body)
-				r.Body = reader
+		sortURLParams(r.URL)
+		key := generateKey(r.URL.String())
+		if r.Method == http.MethodPost && r.Body != nil {
+			body, err := io.ReadAll(r.Body)
+			defer r.Body.Close()
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
 			}
-
-			params := r.URL.Query()
-			if _, ok := params[c.refreshKey]; ok {
-				delete(params, c.refreshKey)
-
-				r.URL.RawQuery = params.Encode()
-				key = generateKey(r.URL.String())
-
-				c.adapter.Release(key)
-			} else {
-				b, ok := c.adapter.Get(key)
-				response := BytesToResponse(b)
-				if ok {
-					if response.Expiration.After(time.Now()) {
-						response.LastAccess = time.Now()
-						response.Frequency++
-						c.adapter.Set(key, response.Bytes(), response.Expiration)
-
-						//w.WriteHeader(http.StatusNotModified)
-						for k, v := range response.Header {
-							w.Header().Set(k, strings.Join(v, ","))
-						}
-						if c.writeExpiresHeader {
-							w.Header().Set("Expires", response.Expiration.UTC().Format(http.TimeFormat))
-						}
-						w.Write(response.Value)
-						return
-					}
-
-					c.adapter.Release(key)
-				}
-			}
-
-			rw := &responseWriter{ResponseWriter: w}
-			next.ServeHTTP(rw, r)
-
-			statusCode := rw.statusCode
-			value := rw.body
-			now := time.Now()
-			expires := now.Add(c.ttl)
-			if statusCode < 400 {
-				response := Response{
-					Value:      value,
-					Header:     rw.Header(),
-					Expiration: expires,
-					LastAccess: now,
-					Frequency:  1,
-				}
-				c.adapter.Set(key, response.Bytes(), response.Expiration)
-			}
-
-			return
+			reader := io.NopCloser(bytes.NewBuffer(body))
+			key = generateKeyWithBody(r.URL.String(), body)
+			r.Body = reader
 		}
 
-		next.ServeHTTP(w, r)
+		params := r.URL.Query()
+		if _, ok := params[c.refreshKey]; ok {
+			delete(params, c.refreshKey)
+
+			r.URL.RawQuery = params.Encode()
+			key = generateKey(r.URL.String())
+
+			c.adapter.Release(r.Context(), key)
+		} else {
+			b, ok := c.adapter.Get(r.Context(), key)
+			response := BytesToResponse(b)
+			if ok {
+				if response.Expiration.After(time.Now()) {
+					response.LastAccess = time.Now()
+					response.Frequency++
+					c.adapter.Set(key, response.Bytes(), response.Expiration)
+
+					//w.WriteHeader(http.StatusNotModified)
+					for k, v := range response.Header {
+						w.Header().Set(k, strings.Join(v, ","))
+					}
+					if c.writeExpiresHeader {
+						w.Header().Set("Expires", response.Expiration.UTC().Format(http.TimeFormat))
+					}
+					w.Write(response.Value)
+					return
+				}
+
+				c.adapter.Release(r.Context(), key)
+			}
+		}
+
+		rw := &responseWriter{ResponseWriter: w}
+		next.ServeHTTP(rw, r)
+
+		statusCode := rw.statusCode
+		value := rw.body
+		now := time.Now()
+		expires := now.Add(c.ttl)
+		if statusCode < 400 {
+			response := Response{
+				Value:      value,
+				Header:     rw.Header(),
+				Expiration: expires,
+				LastAccess: now,
+				Frequency:  1,
+			}
+			c.adapter.Set(key, response.Bytes(), response.Expiration)
+		}
+
+		return
+	}
+
+	next.ServeHTTP(w, r)
 }
 
 // RoundTripperMiddleware is the HTTP cache middleware for RoundTripper.
@@ -206,9 +206,9 @@ func (rt *cacheRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 			r.URL.RawQuery = params.Encode()
 			key = generateKey(r.URL.String())
 
-			rt.client.adapter.Release(key)
+			rt.client.adapter.Release(r.Context(), key)
 		} else {
-			b, ok := rt.client.adapter.Get(key)
+			b, ok := rt.client.adapter.Get(r.Context(), key)
 			response := BytesToResponse(b)
 			if ok {
 				if response.Expiration.After(time.Now()) {
@@ -229,7 +229,7 @@ func (rt *cacheRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 					return resp, nil
 				}
 
-				rt.client.adapter.Release(key)
+				rt.client.adapter.Release(r.Context(), key)
 			}
 		}
 
@@ -268,6 +268,15 @@ func (rt *cacheRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 	}
 
 	return rt.next.RoundTrip(r)
+}
+
+func (c *Client) cacheableMethod(method string) bool {
+	for _, m := range c.methods {
+		if method == m {
+			return true
+		}
+	}
+	return false
 }
 
 // BytesToResponse converts bytes array into Response data structure.
@@ -395,5 +404,19 @@ func ClientWithExpiresHeader() ClientOption {
 		return nil
 	}
 }
+
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+	body       []byte
+}
+
+func (w *responseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *responseWriter) Write(b []byte) (int, error) {
+	w.body = b
 	return w.ResponseWriter.Write(b)
 }

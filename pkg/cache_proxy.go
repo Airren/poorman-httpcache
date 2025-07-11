@@ -6,15 +6,14 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-
-	"github.com/go-redis/cache/v9"
+	"time"
 )
 
 type Middleware func(next http.RoundTripper) http.RoundTripper
 
 type CacheProxy struct {
-	RedisCache *cache.Cache
-	Proxy      *httputil.ReverseProxy
+	Client *Client
+	Proxy  *httputil.ReverseProxy
 }
 
 func NewCacheProxy(host string) *CacheProxy {
@@ -23,13 +22,19 @@ func NewCacheProxy(host string) *CacheProxy {
 		log.Fatalf("Failed to parse URL: %v", err)
 	}
 	rp := httputil.NewSingleHostReverseProxy(domain)
-	// TODO: configure cache
-	cache := cache.New(&cache.Options{})
-	redisCacheMiddleware := NewRedisMiddleware(cache)
-	rp.Transport = redisCacheMiddleware(http.DefaultTransport)
+	client, err := NewClient(
+		// TODO: put redis options here
+		ClientWithAdapter(NewRedisAdapter(nil)),
+		ClientWithMethods([]string{http.MethodGet, http.MethodPut}),
+		ClientWithTTL(24*time.Hour),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+	rp.Transport = client.RoundTripperMiddleware(http.DefaultTransport)
 	return &CacheProxy{
-		RedisCache: cache,
-		Proxy:      rp,
+		Client: client,
+		Proxy:  rp,
 	}
 }
 
