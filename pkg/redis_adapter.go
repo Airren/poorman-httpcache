@@ -46,7 +46,7 @@ type Adapter interface {
 	Release(ctx context.Context, key uint64)
 }
 
-// RedisAdapter is the memory adapter data structure.
+// RedisAdapter is the Redis adapter data structure.
 type RedisAdapter struct {
 	store *cache.Cache
 }
