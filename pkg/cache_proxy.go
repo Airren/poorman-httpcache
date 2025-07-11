@@ -29,7 +29,6 @@ func NewCacheProxy(host string, redisServer map[string]string) http.Handler {
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
-		panic(err)
 	}
 	return client.HTTPHandlerMiddleware(rp)
 }
