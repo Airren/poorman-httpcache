@@ -28,14 +28,14 @@ import (
 	"context"
 	"time"
 
-	redisCache "github.com/go-redis/cache/v9"
+	"github.com/go-redis/cache/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
 // RedisAdapter is the memory adapter data structure.
 type RedisAdapter struct {
-	store *redisCache.Cache
+	store *cache.Cache
 }
 
 // Get implements the cache Adapter interface Get method.
@@ -50,7 +50,7 @@ func (ra *RedisAdapter) Get(ctx context.Context, key uint64) ([]byte, bool) {
 
 // Set implements the cache Adapter interface Set method.
 func (ra *RedisAdapter) Set(key uint64, response []byte, expiration time.Time) {
-	ra.store.Set(&redisCache.Item{
+	ra.store.Set(&cache.Item{
 		Key:   KeyAsString(key),
 		Value: response,
 		TTL:   time.Until(expiration),
@@ -65,7 +65,7 @@ func (ra *RedisAdapter) Release(ctx context.Context, key uint64) {
 // NewRedisAdapter initializes Redis adapter
 func NewRedisAdapter(opt *redis.RingOptions) *RedisAdapter {
 	ring := redis.NewRing(opt)
-	store := redisCache.New(&redisCache.Options{
+	store := cache.New(&cache.Options{
 		Redis: ring,
 		Marshal: func(v interface{}) ([]byte, error) {
 			return msgpack.Marshal(v)
@@ -73,7 +73,7 @@ func NewRedisAdapter(opt *redis.RingOptions) *RedisAdapter {
 		Unmarshal: func(b []byte, v interface{}) error {
 			return msgpack.Unmarshal(b, v)
 		},
-		LocalCache: redisCache.NewTinyLFU(1000, 10*time.Minute),
+		LocalCache: cache.NewTinyLFU(1000, 10*time.Minute),
 	})
 	return &RedisAdapter{
 		store: store,
