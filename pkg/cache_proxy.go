@@ -15,7 +15,6 @@ func NewCacheProxy(host string, redisServer map[string]string) http.Handler {
 	domain, err := url.Parse(host)
 	if err != nil {
 		log.Fatalf("Failed to parse URL: %v", err)
-		panic(err)
 	}
 	rp := httputil.NewSingleHostReverseProxy(domain)
 	client, err := NewClient(
