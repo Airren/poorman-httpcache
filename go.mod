@@ -9,7 +9,7 @@ require (
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/redis/go-redis/v9 v9.11.0 // indirect
 	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
-	github.com/vmihailenco/msgpack/v5 v5.3.4 // indirect
+	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 )

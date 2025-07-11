@@ -15,14 +15,17 @@ import (
 
 func main() {
 
-	jinaProxy := pkg.NewCacheProxy("https://r.jina.ai")
+	config := map[string]string{
+		"test": "localhost:6379",
+	}
+	jinaProxy := pkg.NewCacheProxy("https://r.jina.ai", config)
 	// Initialize the reverse proxy and Redis middleware
 	jinaServer := &http.Server{
 		Addr:    ":8080",
 		Handler: jinaProxy,
 	}
 
-	serperProxy := pkg.NewCacheProxy("https://google.serper.dev")
+	serperProxy := pkg.NewCacheProxy("https://google.serper.dev", config)
 
 	serperServer := &http.Server{
 		Addr:    ":8081",
