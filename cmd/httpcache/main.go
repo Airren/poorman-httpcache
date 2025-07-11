@@ -45,26 +45,26 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
+	// Wait for shutdown signal
+	<-ctx.Done()
+	fmt.Println("Received shutdown signal, shutting down servers...")
+
+	// Create a context with a timeout for graceful shutdown
+	shutdownCtx := context.Background()
+	shutdownCtx, shutdownCancel := context.WithTimeout(shutdownCtx, 10*time.Second)
+	defer shutdownCancel()
+
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		<-ctx.Done()
-		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
-		defer cancel()
 		if err := jinaServer.Shutdown(shutdownCtx); err != nil {
 			fmt.Fprintf(os.Stderr, "error shutting down jina server: %s\n", err)
 		}
 	}()
 
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		<-ctx.Done()
-		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
-		defer cancel()
 		if err := serperServer.Shutdown(shutdownCtx); err != nil {
 			fmt.Fprintf(os.Stderr, "error shutting down serper server: %s\n", err)
 		}
