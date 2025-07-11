@@ -63,11 +63,14 @@ func (ra *RedisAdapter) Get(ctx context.Context, key uint64) ([]byte, bool) {
 
 // Set implements the cache Adapter interface Set method.
 func (ra *RedisAdapter) Set(key uint64, response []byte, expiration time.Time) {
-	ra.store.Set(&cache.Item{
+	err := ra.store.Set(&cache.Item{
 		Key:   KeyAsString(key),
 		Value: response,
 		TTL:   time.Until(expiration),
 	})
+	if err != nil {
+		log.Printf("Failed to set cache for key %s: %v", KeyAsString(key), err)
+	}
 }
 
 // Release implements the cache Adapter interface Release method.
