@@ -33,6 +33,19 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
+// Adapter interface for HTTP cache middleware client.
+type Adapter interface {
+	// Get retrieves the cached response by a given key. It also
+	// returns true or false, whether it exists or not.
+	Get(ctx context.Context, key uint64) ([]byte, bool)
+
+	// Set caches a response for a given key until an expiration date.
+	Set(key uint64, response []byte, expiration time.Time)
+
+	// Release frees cache for a given key.
+	Release(ctx context.Context, key uint64)
+}
+
 // RedisAdapter is the memory adapter data structure.
 type RedisAdapter struct {
 	store *cache.Cache
