@@ -90,12 +90,14 @@ func (c *Client) cacheableMethod(method string) bool {
 }
 
 // BytesToResponse converts bytes array into Response data structure.
-func BytesToResponse(b []byte) Response {
+func BytesToResponse(b []byte) (Response, error) {
 	var r Response
 	dec := gob.NewDecoder(bytes.NewReader(b))
-	dec.Decode(&r)
+	if err := dec.Decode(&r); err != nil {
+		return Response{}, err
+	}
 
-	return r
+	return r, nil
 }
 
 // Bytes converts Response data structure into bytes array.
