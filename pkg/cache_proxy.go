@@ -22,7 +22,7 @@ func NewCacheProxy(host string, redisServer map[string]string) http.Handler {
 		ClientWithAdapter(NewRedisAdapter(&redis.RingOptions{
 			Addrs: redisServer,
 		})),
-		// cache both GET and PUT methods
+		// cache both GET and POST methods
 		ClientWithMethods([]string{http.MethodGet, http.MethodPost}),
 		// cache responses for 24 hours
 		ClientWithTTL(24*time.Hour),
