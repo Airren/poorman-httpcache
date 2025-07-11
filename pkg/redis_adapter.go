@@ -75,7 +75,9 @@ func (ra *RedisAdapter) Set(key uint64, response []byte, expiration time.Time) {
 
 // Release implements the cache Adapter interface Release method.
 func (ra *RedisAdapter) Release(ctx context.Context, key uint64) {
-	ra.store.Delete(ctx, KeyAsString(key))
+	if err := ra.store.Delete(ctx, KeyAsString(key)); err != nil {
+		log.Printf("failed to delete cache entry for key %d: %v", key, err)
+	}
 }
 
 // NewRedisAdapter initializes Redis adapter
