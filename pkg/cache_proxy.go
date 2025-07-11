@@ -8,13 +8,11 @@ import (
 	"net/url"
 
 	"github.com/go-redis/cache/v9"
-	"golang.org/x/sync/singleflight"
 )
 
 type Middleware func(next http.RoundTripper) http.RoundTripper
 
 type CacheProxy struct {
-	RedisSF    *singleflight.Group
 	RedisCache *cache.Cache
 	Proxy      *httputil.ReverseProxy
 }
@@ -30,7 +28,6 @@ func NewCacheProxy(host string) *CacheProxy {
 	redisCacheMiddleware := NewRedisMiddleware(cache)
 	rp.Transport = redisCacheMiddleware(http.DefaultTransport)
 	return &CacheProxy{
-		RedisSF:    &singleflight.Group{},
 		RedisCache: cache,
 		Proxy:      rp,
 	}
