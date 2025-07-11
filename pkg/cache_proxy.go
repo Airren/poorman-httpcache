@@ -12,8 +12,9 @@ import (
 type Middleware func(next http.RoundTripper) http.RoundTripper
 
 type CacheProxy struct {
-	Client *Client
-	Proxy  *httputil.ReverseProxy
+	Client  *Client
+	Proxy   *httputil.ReverseProxy
+	handler http.Handler
 }
 
 func NewCacheProxy(host string) *CacheProxy {
@@ -31,13 +32,15 @@ func NewCacheProxy(host string) *CacheProxy {
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-	rp.Transport = client.RoundTripperMiddleware(http.DefaultTransport)
+	handler := client.HTTPHandlerMiddleware(rp)
+	// rp.Transport = client.RoundTripperMiddleware(http.DefaultTransport)
 	return &CacheProxy{
-		Client: client,
-		Proxy:  rp,
+		Client:  client,
+		Proxy:   rp,
+		handler: handler,
 	}
 }
 
 func (cp *CacheProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	cp.Proxy.ServeHTTP(w, r)
+	cp.handler.ServeHTTP(w, r)
 }

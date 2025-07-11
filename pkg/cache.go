@@ -85,7 +85,7 @@ type Adapter interface {
 	Release(ctx context.Context, key uint64)
 }
 
-// Middleware is the HTTP cache middleware handler.
+// HTTPHandlerMiddleware is the HTTP cache middleware handler.
 func (c *Client) HTTPHandlerMiddleware(next http.Handler) http.Handler {
 	return &cacheHTTPHandler{
 		next:   next,
