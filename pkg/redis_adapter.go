@@ -26,6 +26,7 @@ package pkg
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/go-redis/cache/v9"
@@ -69,14 +70,14 @@ func (ra *RedisAdapter) Set(key uint64, response []byte, expiration time.Time) {
 		TTL:   time.Until(expiration),
 	})
 	if err != nil {
-		log.Printf("Failed to set cache for key %s: %v", KeyAsString(key), err)
+		slog.Error("Failed to set cache", "key", KeyAsString(key), "error", err)
 	}
 }
 
 // Release implements the cache Adapter interface Release method.
 func (ra *RedisAdapter) Release(ctx context.Context, key uint64) {
 	if err := ra.store.Delete(ctx, KeyAsString(key)); err != nil {
-		log.Printf("failed to delete cache entry for key %d: %v", key, err)
+		slog.Error("Failed to delete cache entry", "key", key, "error", err)
 	}
 }
 

@@ -2,10 +2,11 @@
 package pkg
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -15,7 +16,8 @@ import (
 func NewCacheProxy(host string, redisServer map[string]string) http.Handler {
 	domain, err := url.Parse(host)
 	if err != nil {
-		log.Fatalf("Failed to parse URL: %v", err)
+		slog.Error("Failed to parse URL", "host", host, "error", err)
+		os.Exit(1)
 	}
 	rp := httputil.NewSingleHostReverseProxy(domain)
 	cache, err := NewCache(
@@ -28,7 +30,8 @@ func NewCacheProxy(host string, redisServer map[string]string) http.Handler {
 		CacheWithTTL(24*time.Hour),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		slog.Error("Failed to create client", "error", err)
+		os.Exit(1)
 	}
 	return cache.HTTPHandlerMiddleware(rp)
 }

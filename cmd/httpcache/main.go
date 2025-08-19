@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"httpcache/pkg"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,13 +34,15 @@ func main() {
 	// start the servers
 	go func() {
 		if err := jinaServer.ListenAndServe(); err != nil {
-			log.Fatalf("Server failed: %v", err)
+			slog.Error("Jina server failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
 	go func() {
 		if err := serperServer.ListenAndServe(); err != nil {
-			log.Fatalf("Server failed: %v", err)
+			slog.Error("Serper server failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -50,7 +51,7 @@ func main() {
 
 	// Wait for shutdown signal
 	<-ctx.Done()
-	fmt.Println("Received shutdown signal, shutting down servers...")
+	slog.Info("Received shutdown signal, shutting down servers...")
 
 	// Create a context with a timeout for graceful shutdown
 	shutdownCtx := context.Background()
@@ -62,14 +63,14 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := jinaServer.Shutdown(shutdownCtx); err != nil {
-			fmt.Fprintf(os.Stderr, "error shutting down jina server: %s\n", err)
+			slog.Error("Error shutting down jina server", "error", err)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		if err := serperServer.Shutdown(shutdownCtx); err != nil {
-			fmt.Fprintf(os.Stderr, "error shutting down serper server: %s\n", err)
+			slog.Error("Error shutting down serper server", "error", err)
 		}
 	}()
 	wg.Wait()
