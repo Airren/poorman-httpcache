@@ -55,8 +55,8 @@ type Response struct {
 	Frequency int
 }
 
-// Client data structure for HTTP cache middleware.
-type Client struct {
+// Cache data structure for HTTP cache middleware.
+type Cache struct {
 	adapter            Adapter
 	ttl                time.Duration
 	refreshKey         string
@@ -65,22 +65,22 @@ type Client struct {
 }
 
 // HTTPHandlerMiddleware is the HTTP cache middleware handler.
-func (c *Client) HTTPHandlerMiddleware(next http.Handler) http.Handler {
-	return &cacheHTTPHandler{
+func (c *Cache) HTTPHandlerMiddleware(next http.Handler) http.Handler {
+	return &cachedHTTPHandler{
 		next:   next,
 		client: c,
 	}
 }
 
 // RoundTripperMiddleware is the HTTP cache middleware for RoundTripper.
-func (c *Client) RoundTripperMiddleware(next http.RoundTripper) http.RoundTripper {
+func (c *Cache) RoundTripperMiddleware(next http.RoundTripper) http.RoundTripper {
 	return &cacheRoundTripper{
 		next:   next,
 		client: c,
 	}
 }
 
-func (c *Client) cacheableMethod(method string) bool {
+func (c *Cache) cacheableMethod(method string) bool {
 	for _, m := range c.methods {
 		if method == m {
 			return true

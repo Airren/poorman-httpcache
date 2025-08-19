@@ -8,12 +8,13 @@ import (
 	"time"
 )
 
-type cacheHTTPHandler struct {
+// cachedHTTPHandler is a `http.Handler` that caches the responses.
+type cachedHTTPHandler struct {
 	next   http.Handler
-	client *Client
+	client *Cache
 }
 
-func (h *cacheHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *cachedHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c := h.client
 	next := h.next
 	if c.cacheableMethod(r.Method) {
@@ -87,9 +88,10 @@ func (h *cacheHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	next.ServeHTTP(w, r)
 }
 
+// cacheRoundTripper is a `http.RoundTripper` that caches the responses.
 type cacheRoundTripper struct {
 	next   http.RoundTripper
-	client *Client
+	client *Cache
 }
 
 func (rt *cacheRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {

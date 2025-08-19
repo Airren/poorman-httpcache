@@ -85,10 +85,10 @@ func NewRedisAdapter(opt *redis.RingOptions) *RedisAdapter {
 	ring := redis.NewRing(opt)
 	store := cache.New(&cache.Options{
 		Redis: ring,
-		Marshal: func(v interface{}) ([]byte, error) {
+		Marshal: func(v any) ([]byte, error) {
 			return msgpack.Marshal(v)
 		},
-		Unmarshal: func(b []byte, v interface{}) error {
+		Unmarshal: func(b []byte, v any) error {
 			return msgpack.Unmarshal(b, v)
 		},
 		LocalCache: cache.NewTinyLFU(1000, 10*time.Minute),
