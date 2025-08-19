@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"httpcache/pkg/cache"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -20,14 +22,14 @@ func NewCacheProxy(host string, redisServer map[string]string) http.Handler {
 		os.Exit(1)
 	}
 	rp := httputil.NewSingleHostReverseProxy(domain)
-	cache, err := NewCache(
-		CacheWithAdapter(NewRedisAdapter(&redis.RingOptions{
+	cache, err := cache.New(
+		cache.WithAdapter(cache.NewRedisAdapter(&redis.RingOptions{
 			Addrs: redisServer,
 		})),
 		// cache both GET and PUT methods
-		CacheWithMethods([]string{http.MethodGet, http.MethodPost}),
+		cache.WithMethods([]string{http.MethodGet, http.MethodPost}),
 		// cache responses for 24 hours
-		CacheWithTTL(24*time.Hour),
+		cache.WithTTL(24*time.Hour),
 	)
 	if err != nil {
 		slog.Error("Failed to create client", "error", err)
