@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-// RewriteJinaKey rewrites the header to use a random key from the list.
+// LoadBalanceJinaKey rewrites the header to use a random key from the list.
 //
 //	curl "https://r.jina.ai/https://www.example.com" \
 //	 -H "Authorization: Bearer jina_xxx"
-func RewriteJinaKey(keys []string) func(*httputil.ProxyRequest) {
+func LoadBalanceJinaKey(keys []string) func(*httputil.ProxyRequest) {
 	return func(req *httputil.ProxyRequest) {
 		// select a random key from the list
 		randomKey := keys[rand.Intn(len(keys))]
@@ -45,13 +45,3 @@ func RewriteJinaPath(targetURL string) func(*httputil.ProxyRequest) {
 		req.Out.URL.Scheme = "https"
 	}
 }
-
-// func NewJina(keys []string) *httputil.ReverseProxy {
-// 	proxy, _ := New(
-// 		WithRewrites(
-// 			RewriteJinaPath("https://api.jina.ai"),
-// 			RewriteJinaHeader(keys),
-// 		),
-// 	)
-// 	return proxy
-// }
