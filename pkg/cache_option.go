@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-// ClientOption is used to set Client settings.
-type ClientOption func(c *Client) error
+// CacheOption is used to set Client settings.
+type CacheOption func(c *Cache) error
 
-// NewClient initializes the cache HTTP middleware client with the given
+// NewCache initializes the cache HTTP middleware client with the given
 // options.
-func NewClient(opts ...ClientOption) (*Client, error) {
-	c := &Client{}
+func NewCache(opts ...CacheOption) (*Cache, error) {
+	c := &Cache{}
 
 	for _, opt := range opts {
 		if err := opt(c); err != nil {
@@ -34,18 +34,18 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	return c, nil
 }
 
-// ClientWithAdapter sets the adapter type for the HTTP cache
+// CacheWithAdapter sets the adapter type for the HTTP cache
 // middleware client.
-func ClientWithAdapter(a Adapter) ClientOption {
-	return func(c *Client) error {
+func CacheWithAdapter(a Adapter) CacheOption {
+	return func(c *Cache) error {
 		c.adapter = a
 		return nil
 	}
 }
 
-// ClientWithTTL sets how long each response is going to be cached.
-func ClientWithTTL(ttl time.Duration) ClientOption {
-	return func(c *Client) error {
+// CacheWithTTL sets how long each response is going to be cached.
+func CacheWithTTL(ttl time.Duration) CacheOption {
+	return func(c *Cache) error {
 		if int64(ttl) < 1 {
 			return fmt.Errorf("cache client ttl %v is invalid", ttl)
 		}
@@ -56,19 +56,19 @@ func ClientWithTTL(ttl time.Duration) ClientOption {
 	}
 }
 
-// ClientWithRefreshKey sets the parameter key used to free a request
+// CacheWithRefreshKey sets the parameter key used to free a request
 // cached response. Optional setting.
-func ClientWithRefreshKey(refreshKey string) ClientOption {
-	return func(c *Client) error {
+func CacheWithRefreshKey(refreshKey string) CacheOption {
+	return func(c *Cache) error {
 		c.refreshKey = refreshKey
 		return nil
 	}
 }
 
-// ClientWithMethods sets the acceptable HTTP methods to be cached.
+// CacheWithMethods sets the acceptable HTTP methods to be cached.
 // Optional setting. If not set, default is "GET".
-func ClientWithMethods(methods []string) ClientOption {
-	return func(c *Client) error {
+func CacheWithMethods(methods []string) CacheOption {
+	return func(c *Cache) error {
 		for _, method := range methods {
 			if method != http.MethodGet && method != http.MethodPost {
 				return fmt.Errorf("invalid method %s", method)
@@ -79,10 +79,10 @@ func ClientWithMethods(methods []string) ClientOption {
 	}
 }
 
-// ClientWithExpiresHeader enables middleware to add an Expires header to responses.
+// CacheWithExpiresHeader enables middleware to add an Expires header to responses.
 // Optional setting. If not set, default is false.
-func ClientWithExpiresHeader() ClientOption {
-	return func(c *Client) error {
+func CacheWithExpiresHeader() CacheOption {
+	return func(c *Cache) error {
 		c.writeExpiresHeader = true
 		return nil
 	}
