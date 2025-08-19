@@ -1,4 +1,4 @@
-package pkg
+package cache
 
 import (
 	"errors"
@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-// CacheOption is used to set Client settings.
-type CacheOption func(c *Cache) error
+// Option is used to set Client settings.
+type Option func(c *Cache) error
 
-// NewCache initializes the cache HTTP middleware client with the given
+// New initializes the cache HTTP middleware client with the given
 // options.
-func NewCache(opts ...CacheOption) (*Cache, error) {
+func New(opts ...Option) (*Cache, error) {
 	c := &Cache{}
 
 	for _, opt := range opts {
@@ -34,17 +34,17 @@ func NewCache(opts ...CacheOption) (*Cache, error) {
 	return c, nil
 }
 
-// CacheWithAdapter sets the adapter type for the HTTP cache
+// WithAdapter sets the adapter type for the HTTP cache
 // middleware client.
-func CacheWithAdapter(a Adapter) CacheOption {
+func WithAdapter(a Adapter) Option {
 	return func(c *Cache) error {
 		c.adapter = a
 		return nil
 	}
 }
 
-// CacheWithTTL sets how long each response is going to be cached.
-func CacheWithTTL(ttl time.Duration) CacheOption {
+// WithTTL sets how long each response is going to be cached.
+func WithTTL(ttl time.Duration) Option {
 	return func(c *Cache) error {
 		if int64(ttl) < 1 {
 			return fmt.Errorf("cache client ttl %v is invalid", ttl)
@@ -56,18 +56,18 @@ func CacheWithTTL(ttl time.Duration) CacheOption {
 	}
 }
 
-// CacheWithRefreshKey sets the parameter key used to free a request
+// WithRefreshKey sets the parameter key used to free a request
 // cached response. Optional setting.
-func CacheWithRefreshKey(refreshKey string) CacheOption {
+func WithRefreshKey(refreshKey string) Option {
 	return func(c *Cache) error {
 		c.refreshKey = refreshKey
 		return nil
 	}
 }
 
-// CacheWithMethods sets the acceptable HTTP methods to be cached.
+// WithMethods sets the acceptable HTTP methods to be cached.
 // Optional setting. If not set, default is "GET".
-func CacheWithMethods(methods []string) CacheOption {
+func WithMethods(methods []string) Option {
 	return func(c *Cache) error {
 		for _, method := range methods {
 			if method != http.MethodGet && method != http.MethodPost {
@@ -79,9 +79,9 @@ func CacheWithMethods(methods []string) CacheOption {
 	}
 }
 
-// CacheWithExpiresHeader enables middleware to add an Expires header to responses.
+// WithExpiresHeader enables middleware to add an Expires header to responses.
 // Optional setting. If not set, default is false.
-func CacheWithExpiresHeader() CacheOption {
+func WithExpiresHeader() Option {
 	return func(c *Cache) error {
 		c.writeExpiresHeader = true
 		return nil

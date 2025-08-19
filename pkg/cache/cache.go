@@ -22,7 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package pkg
+// Package cache provides a cache middleware for HTTP requests.
+package cache
 
 import (
 	"bytes"
