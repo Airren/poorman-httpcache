@@ -10,12 +10,24 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	env "github.com/caarlos0/env/v11"
 )
+
+type Config struct {
+	RedisServer string `env:"REDIS_SERVER" envDefault:"localhost:6379"`
+}
 
 func main() {
 
+	// parse with generics
+	cfg, err := env.ParseAs[Config]()
+	if err != nil {
+		slog.Error("Failed to parse config", "error", err)
+		os.Exit(1)
+	}
 	config := map[string]string{
-		"test": "localhost:6379",
+		"server0": cfg.RedisServer,
 	}
 	jinaProxy := pkg.NewCacheProxy("https://r.jina.ai", config)
 	serperProxy := pkg.NewCacheProxy("https://google.serper.dev", config)
