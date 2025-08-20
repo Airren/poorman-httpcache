@@ -7,41 +7,69 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
+	"strings"
 	"syscall"
 	"time"
+
+	env "github.com/caarlos0/env/v11"
 )
+
+type Config struct {
+	RedisServer string `env:"REDIS_SERVER" envDefault:"localhost:6379"`
+}
 
 func main() {
 
+	// parse with generics
+	cfg, err := env.ParseAs[Config]()
+	if err != nil {
+		slog.Error("Failed to parse config", "error", err)
+		os.Exit(1)
+	}
 	config := map[string]string{
-		"test": "localhost:6379",
+		"server0": cfg.RedisServer,
 	}
 	jinaProxy := pkg.NewCacheProxy("https://r.jina.ai", config)
-	// Initialize the reverse proxy and Redis middleware
-	jinaServer := &http.Server{
-		Addr:    ":8080",
-		Handler: jinaProxy,
-	}
-
 	serperProxy := pkg.NewCacheProxy("https://google.serper.dev", config)
 
-	serperServer := &http.Server{
-		Addr:    ":8081",
-		Handler: serperProxy,
+	// Create a single HTTP server with path-based routing
+	mux := http.NewServeMux()
+
+	// Route /jina/* requests to jinaProxy
+	mux.HandleFunc("/jina/", func(w http.ResponseWriter, r *http.Request) {
+		// Strip the /jina prefix from the request path
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/jina")
+		if r.URL.Path == "" {
+			r.URL.Path = "/"
+		}
+		jinaProxy.ServeHTTP(w, r)
+	})
+
+	// Route /serper/* requests to serperProxy
+	mux.HandleFunc("/serper/", func(w http.ResponseWriter, r *http.Request) {
+		// Strip the /serper prefix from the request path
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/serper")
+		if r.URL.Path == "" {
+			r.URL.Path = "/"
+		}
+		serperProxy.ServeHTTP(w, r)
+	})
+
+	// Default route for root path
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("HTTP Cache Proxy\n\nAvailable endpoints:\n- /jina/* -> Jina AI Proxy\n- /serper/* -> Serper Proxy"))
+	})
+
+	// Single server listening on port 8080
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
 	}
 
-	// start the servers
+	// Start the single server
 	go func() {
-		if err := jinaServer.ListenAndServe(); err != nil {
-			slog.Error("Jina server failed", "error", err)
-			os.Exit(1)
-		}
-	}()
-
-	go func() {
-		if err := serperServer.ListenAndServe(); err != nil {
-			slog.Error("Serper server failed", "error", err)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("Server failed", "error", err)
 			os.Exit(1)
 		}
 	}()
@@ -51,27 +79,14 @@ func main() {
 
 	// Wait for shutdown signal
 	<-ctx.Done()
-	slog.Info("Received shutdown signal, shutting down servers...")
+	slog.Info("Received shutdown signal, shutting down server...")
 
 	// Create a context with a timeout for graceful shutdown
 	shutdownCtx := context.Background()
 	shutdownCtx, shutdownCancel := context.WithTimeout(shutdownCtx, 10*time.Second)
 	defer shutdownCancel()
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		if err := jinaServer.Shutdown(shutdownCtx); err != nil {
-			slog.Error("Error shutting down jina server", "error", err)
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		if err := serperServer.Shutdown(shutdownCtx); err != nil {
-			slog.Error("Error shutting down serper server", "error", err)
-		}
-	}()
-	wg.Wait()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		slog.Error("Error shutting down server", "error", err)
+	}
 }
