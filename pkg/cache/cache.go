@@ -29,6 +29,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"hash/fnv"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"sort"
@@ -63,6 +64,7 @@ type Cache struct {
 	refreshKey         string
 	methods            []string
 	writeExpiresHeader bool
+	logger             *slog.Logger
 }
 
 // HTTPHandlerMiddleware is the HTTP cache middleware handler.

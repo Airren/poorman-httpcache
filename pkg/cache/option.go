@@ -3,6 +3,7 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -84,6 +85,13 @@ func WithMethods(methods []string) Option {
 func WithExpiresHeader() Option {
 	return func(c *Cache) error {
 		c.writeExpiresHeader = true
+		return nil
+	}
+}
+
+func WithLogger(logger *slog.Logger) Option {
+	return func(c *Cache) error {
+		c.logger = logger
 		return nil
 	}
 }
