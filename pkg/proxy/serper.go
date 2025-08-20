@@ -34,6 +34,6 @@ func RewriteSerperPath(targetURL string) func(*httputil.ProxyRequest) {
 	return func(req *httputil.ProxyRequest) {
 		req.SetURL(target)
 		req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/serper")
-		req.Out.URL.Scheme = "https"
+		req.Out.URL.Scheme = target.Scheme
 	}
 }

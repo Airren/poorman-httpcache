@@ -2,6 +2,7 @@
 package pkg
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"strings"
@@ -9,20 +10,20 @@ import (
 
 // GetLogger returns the configured logger instance
 func GetLogger(levelStr string) *slog.Logger {
-	logLevel := slog.LevelInfo
-	if levelStr != "" {
-		switch strings.ToUpper(levelStr) {
-		case "DEBUG":
-			logLevel = slog.LevelDebug
-		case "INFO":
-			logLevel = slog.LevelInfo
-		case "WARN":
-			logLevel = slog.LevelWarn
-		case "ERROR":
-			logLevel = slog.LevelError
-		}
+	logLevel := slog.LevelDebug
+	final := strings.ToUpper(levelStr)
+	switch final {
+	case "DEBUG":
+		logLevel = slog.LevelDebug
+	case "INFO":
+		logLevel = slog.LevelInfo
+	case "WARN":
+		logLevel = slog.LevelWarn
+	case "ERROR":
+		logLevel = slog.LevelError
 	}
 
+	fmt.Println("final logLevel", logLevel)
 	// Set up structured logging with JSON format and proper level
 	opts := &slog.HandlerOptions{
 		Level:     logLevel,

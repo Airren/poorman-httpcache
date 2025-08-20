@@ -18,13 +18,17 @@ import (
 )
 
 type Config struct {
+	// general
+	Port     int    `env:"PORT" envDefault:"8080"`
+	LogLevel string `env:"LOG_LEVEL" envDefault:"debug"`
+	// redis
 	RedisServer   string `env:"REDIS_SERVER" envDefault:"localhost:6379"`
 	RedisUsername string `env:"REDIS_USERNAME" envDefault:""`
 	RedisPassword string `env:"REDIS_PASSWORD" envDefault:""`
-	SerperAPIKey  string `env:"SERPER_API_KEY"`
-	JinaAPIKey    string `env:"JINA_API_KEY"`
-	Port          int    `env:"PORT" envDefault:"3000"`
-	LogLevel      string `env:"LOG_LEVEL" envDefault:"debug"`
+	// serper
+	SerperAPIKey string `env:"SERPER_API_KEY"`
+	// jina
+	JinaAPIKey string `env:"JINA_API_KEY"`
 }
 
 func NewCache(cfg Config, logger *slog.Logger) (*cache.Cache, error) {
@@ -38,6 +42,7 @@ func NewCache(cfg Config, logger *slog.Logger) (*cache.Cache, error) {
 		cache.WithMethods([]string{http.MethodGet, http.MethodPost}),
 		// cache responses for 24 hours
 		cache.WithTTL(24*time.Hour),
+		cache.WithLogger(logger),
 	)
 	if err != nil {
 		logger.Error("Failed to create cache", "error", err)
@@ -58,14 +63,15 @@ func NewJinaProxy(cache *cache.Cache, cfg Config, logger *slog.Logger) (http.Han
 		logger.Error("Failed to create Jina proxy", "error", err)
 		return nil, err
 	}
-	return cache.HTTPHandlerMiddleware(rp), nil
+	// return cache.HTTPHandlerMiddleware(rp), nil
+	return rp, nil
 }
 
 func NewSerperProxy(cache *cache.Cache, cfg Config, logger *slog.Logger) (http.Handler, error) {
 	rp, err := proxy.New(
 		proxy.WithRewrites(
-			proxy.RewriteJinaPath("https://google.serper.dev"),
-			proxy.ReplaceJinaKey(cfg.SerperAPIKey),
+			proxy.RewriteSerperPath("https://google.serper.dev"),
+			proxy.ReplaceSerperKey(cfg.SerperAPIKey),
 			proxy.DebugRequest(logger),
 		),
 	)
@@ -73,7 +79,8 @@ func NewSerperProxy(cache *cache.Cache, cfg Config, logger *slog.Logger) (http.H
 		logger.Error("Failed to create Serper proxy", "error", err)
 		return nil, err
 	}
-	return cache.HTTPHandlerMiddleware(rp), nil
+	// return cache.HTTPHandlerMiddleware(rp), nil
+	return rp, nil
 }
 
 func run(ctx context.Context, cfg Config, logger *slog.Logger) error {

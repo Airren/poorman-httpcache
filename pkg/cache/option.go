@@ -31,6 +31,9 @@ func New(opts ...Option) (*Cache, error) {
 	if c.methods == nil {
 		c.methods = []string{http.MethodGet}
 	}
+	if c.logger == nil {
+		return nil, errors.New("cache client logger is not set")
+	}
 
 	return c, nil
 }
