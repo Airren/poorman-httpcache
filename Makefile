@@ -9,6 +9,9 @@ test:
 debug:
 	echo "testing"
 
+dev: build
+	set -o allexport && source .env && ./httpcache
+
 deploy: build
 	nohup ./httpcache > trace.log 2>&1 & echo $$! > save_pid.txt
 
