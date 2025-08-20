@@ -38,3 +38,6 @@ secret/secret.jsonc
 /httpcache
 save_pid.txt
 trace.log
+
+# test files with sensitive information
+tests/debug.sh

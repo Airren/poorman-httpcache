@@ -12,6 +12,6 @@ source "$ENV_FILE"
 set +o allexport
 
 
-curl "https://r.jina.ai/https://www.example.com" \
+curl "http://127.0.0.1:${PORT}/jina/https://www.example.com" \
   -H "Authorization: Bearer $JINA_API_KEY"
 

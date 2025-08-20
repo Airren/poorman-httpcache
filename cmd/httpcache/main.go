@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"httpcache/pkg"
 	"log/slog"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"os/signal"
 	"strings"
@@ -15,7 +17,11 @@ import (
 )
 
 type Config struct {
-	RedisServer string `env:"REDIS_SERVER" envDefault:"localhost:6379"`
+	RedisServer  string `env:"REDIS_SERVER" envDefault:"localhost:6379"`
+	SerperAPIKey string `env:"SERPER_API_KEY"`
+	JinaAPIKey   string `env:"JINA_API_KEY"`
+	Port         int    `env:"PORT" envDefault:"3000"`
+	LogLevel     string `env:"LOG_LEVEL" envDefault:"debug"`
 }
 
 func main() {
@@ -26,6 +32,20 @@ func main() {
 		slog.Error("Failed to parse config", "error", err)
 		os.Exit(1)
 	}
+	logLevel := slog.LevelInfo
+	switch strings.ToUpper(cfg.LogLevel) {
+	case "DEBUG":
+		logLevel = slog.LevelDebug
+	case "INFO":
+		logLevel = slog.LevelInfo
+	case "WARN":
+		logLevel = slog.LevelWarn
+	case "ERROR":
+		logLevel = slog.LevelError
+	}
+	pkg.SetLogLevel(logLevel)
+	slog.Info("Config", "cfg", cfg)
+
 	config := map[string]string{
 		"server0": cfg.RedisServer,
 	}
@@ -52,6 +72,11 @@ func main() {
 		if r.URL.Path == "" {
 			r.URL.Path = "/"
 		}
+		dump, err := httputil.DumpRequest(r, false)
+		if err != nil {
+			slog.Debug("failed to dump request", "error", err)
+		}
+		slog.Debug("outgoing request", "dump", string(dump))
 		serperProxy.ServeHTTP(w, r)
 	})
 
@@ -62,7 +87,7 @@ func main() {
 
 	// Single server listening on port 8080
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: mux,
 	}
 
