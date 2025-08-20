@@ -3,6 +3,7 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -29,6 +30,9 @@ func New(opts ...Option) (*Cache, error) {
 	}
 	if c.methods == nil {
 		c.methods = []string{http.MethodGet}
+	}
+	if c.logger == nil {
+		return nil, errors.New("cache client logger is not set")
 	}
 
 	return c, nil
@@ -84,6 +88,13 @@ func WithMethods(methods []string) Option {
 func WithExpiresHeader() Option {
 	return func(c *Cache) error {
 		c.writeExpiresHeader = true
+		return nil
+	}
+}
+
+func WithLogger(logger *slog.Logger) Option {
+	return func(c *Cache) error {
+		c.logger = logger
 		return nil
 	}
 }

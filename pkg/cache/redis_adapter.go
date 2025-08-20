@@ -49,7 +49,8 @@ type Adapter interface {
 
 // RedisAdapter is the Redis adapter data structure.
 type RedisAdapter struct {
-	store *cache.Cache
+	store  *cache.Cache
+	logger *slog.Logger
 }
 
 // Get implements the cache Adapter interface Get method.
@@ -70,14 +71,14 @@ func (ra *RedisAdapter) Set(key uint64, response []byte, expiration time.Time) {
 		TTL:   time.Until(expiration),
 	})
 	if err != nil {
-		slog.Error("Failed to set cache", "key", KeyAsString(key), "error", err)
+		ra.logger.Error("Failed to set cache", "key", KeyAsString(key), "error", err)
 	}
 }
 
 // Release implements the cache Adapter interface Release method.
 func (ra *RedisAdapter) Release(ctx context.Context, key uint64) {
 	if err := ra.store.Delete(ctx, KeyAsString(key)); err != nil {
-		slog.Error("Failed to delete cache entry", "key", key, "error", err)
+		ra.logger.Error("Failed to delete cache entry", "key", key, "error", err)
 	}
 }
 

@@ -51,31 +51,33 @@ func WithRewrites(rewrites ...func(*httputil.ProxyRequest)) Option {
 }
 
 // DebugRequest dumps the request and response for debugging.
-func DebugRequest(req *httputil.ProxyRequest) {
-	dump, err := httputil.DumpRequest(req.In, false)
-	if err != nil {
-		slog.Debug("failed to dump request", "error", err)
-		return
+func DebugRequest(logger *slog.Logger) func(req *httputil.ProxyRequest) {
+	return func(req *httputil.ProxyRequest) {
+		dump, err := httputil.DumpRequest(req.In, false)
+		if err != nil {
+			logger.Debug("failed to dump request", "error", err)
+			return
+		}
+		logger.Debug("incoming request", "dump", string(dump))
+		dump, err = httputil.DumpRequest(req.Out, false)
+		if err != nil {
+			logger.Debug("failed to dump request", "error", err)
+			return
+		}
+		logger.Debug("outgoing request", "dump", string(dump))
 	}
-	slog.Debug("incoming request", "dump", string(dump))
-	dump, err = httputil.DumpRequest(req.Out, false)
-	if err != nil {
-		slog.Debug("failed to dump request", "error", err)
-		return
-	}
-	slog.Debug("outgoing request", "dump", string(dump))
 }
 
 // ProxyTransport creates a new transport for the ReverseProxy.
-func ProxyTransport(enablePorxy bool, outboundURL string) *http.Transport {
+func ProxyTransport(enablePorxy bool, outboundURL string, logger *slog.Logger) *http.Transport {
 	transport := &http.Transport{}
 	if enablePorxy {
 		proxyURL, err := url.Parse(outboundURL)
 		if err != nil {
-			slog.Debug("Error parsing outbound proxy URL", "url", outboundURL, "error", err)
+			logger.Debug("Error parsing outbound proxy URL", "url", outboundURL, "error", err)
 		} else {
 			transport.Proxy = http.ProxyURL(proxyURL)
-			slog.Debug("Using outbound proxy", "proxy", proxyURL.String())
+			logger.Debug("Using outbound proxy", "proxy", proxyURL.String())
 		}
 	} else {
 		// If outboundProxyURL is empty or invalid, transport.Proxy will remain nil,
@@ -84,7 +86,7 @@ func ProxyTransport(enablePorxy bool, outboundURL string) *http.Transport {
 		// If no proxy is set, it will use a new transport with no proxy, overriding env vars.
 		// If you want to respect HTTP_PROXY, HTTPS_PROXY, NO_PROXY env vars when outboundProxyURL is not set, use http.DefaultTransport.
 		// For this specific feature, we want to explicitly control the proxy via the command-line flag or have no proxy if not specified there.
-		slog.Debug("No outbound proxy URL provided. Using direct connection.")
+		logger.Debug("No outbound proxy URL provided. Using direct connection.")
 		// Ensure no proxy is used if not specified, effectively overriding environment variables.
 		transport.Proxy = nil // Explicitly set to nil to override environment proxy settings
 	} // else, transport.Proxy is already set if outboundProxyURL was valid, or nil if parsing failed (with a log message)

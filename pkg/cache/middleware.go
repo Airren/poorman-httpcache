@@ -3,7 +3,6 @@ package cache
 import (
 	"bytes"
 	"io"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -25,7 +24,7 @@ func (h *cachedHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			body, err := io.ReadAll(r.Body)
 			defer r.Body.Close()
 			if err != nil {
-				slog.Warn("Failed to read request body", "method", r.Method, "url", r.URL.String(), "error", err)
+				h.client.logger.Warn("Failed to read request body", "method", r.Method, "url", r.URL.String(), "error", err)
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -41,14 +40,14 @@ func (h *cachedHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			r.URL.RawQuery = params.Encode()
 			key = generateKey(r.URL.String())
 
-			slog.Info("Cache refresh requested", "key", key, "method", r.Method, "url", r.URL.String())
+			h.client.logger.Info("Cache refresh requested", "key", key, "method", r.Method, "url", r.URL.String())
 			c.adapter.Release(r.Context(), key)
 		} else {
 			b, ok := c.adapter.Get(r.Context(), key)
 			if ok {
 				response, err := BytesToResponse(b)
 				if err != nil {
-					slog.Warn("Failed to deserialize cached response", "key", key, "error", err)
+					h.client.logger.Warn("Failed to deserialize cached response", "key", key, "error", err)
 					next.ServeHTTP(w, r)
 					return
 				}
@@ -57,7 +56,7 @@ func (h *cachedHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					response.Frequency++
 					c.adapter.Set(key, response.Bytes(), response.Expiration)
 
-					slog.Info("Cache hit", "key", key, "method", r.Method, "url", r.URL.String(), "frequency", response.Frequency)
+					h.client.logger.Info("Cache hit", "key", key, "method", r.Method, "url", r.URL.String(), "frequency", response.Frequency)
 					//w.WriteHeader(http.StatusNotModified)
 					for k, v := range response.Header {
 						w.Header().Set(k, strings.Join(v, ","))
@@ -69,7 +68,7 @@ func (h *cachedHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				slog.Info("Cache entry expired", "key", key, "expiration", response.Expiration)
+				h.client.logger.Info("Cache entry expired", "key", key, "expiration", response.Expiration)
 				c.adapter.Release(r.Context(), key)
 			}
 		}
@@ -90,9 +89,9 @@ func (h *cachedHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Frequency:  1,
 			}
 			c.adapter.Set(key, response.Bytes(), response.Expiration)
-			slog.Info("Cache miss - new entry created", "key", key, "method", r.Method, "url", r.URL.String(), "status_code", statusCode, "expires", expires)
+			h.client.logger.Info("Cache miss - new entry created", "key", key, "method", r.Method, "url", r.URL.String(), "status_code", statusCode, "expires", expires)
 		} else {
-			slog.Warn("Response not cached due to error status", "key", key, "method", r.Method, "url", r.URL.String(), "status_code", statusCode)
+			h.client.logger.Warn("Response not cached due to error status", "key", key, "method", r.Method, "url", r.URL.String(), "status_code", statusCode)
 		}
 
 		return
