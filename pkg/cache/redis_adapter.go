@@ -83,10 +83,11 @@ func (ra *RedisAdapter) Release(ctx context.Context, key uint64) {
 }
 
 // NewRedisAdapter initializes Redis adapter
-func NewRedisAdapter(opt *redis.ClusterOptions, logger *slog.Logger) *RedisAdapter {
-	cluster := redis.NewClusterClient(opt)
+func NewRedisAdapter(opt *redis.RingOptions, logger *slog.Logger) *RedisAdapter {
+	// We don't use cluster because standalond redis does not support cluster mode.
+	ring := redis.NewRing(opt)
 	store := cache.New(&cache.Options{
-		Redis: cluster,
+		Redis: ring,
 		Marshal: func(v any) ([]byte, error) {
 			return msgpack.Marshal(v)
 		},

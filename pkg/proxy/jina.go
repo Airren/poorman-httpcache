@@ -34,11 +34,7 @@ func ReplaceJinaKey(key string) func(*httputil.ProxyRequest) {
 //
 //	curl "https://r.jina.ai/https://www.example.com" \
 //	 -H "Authorization: Bearer jina_xxx"
-func RewriteJinaPath(targetURL string) func(*httputil.ProxyRequest) {
-	target, err := url.Parse(targetURL)
-	if err != nil {
-		panic(err)
-	}
+func RewriteJinaPath(target *url.URL) func(*httputil.ProxyRequest) {
 	return func(req *httputil.ProxyRequest) {
 		req.SetURL(target)
 		req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/jina")

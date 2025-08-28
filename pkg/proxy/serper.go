@@ -26,11 +26,7 @@ func ReplaceSerperKey(key string) func(*httputil.ProxyRequest) {
 	}
 }
 
-func RewriteSerperPath(targetURL string) func(*httputil.ProxyRequest) {
-	target, err := url.Parse(targetURL)
-	if err != nil {
-		panic(err)
-	}
+func RewriteSerperPath(target *url.URL) func(*httputil.ProxyRequest) {
 	return func(req *httputil.ProxyRequest) {
 		req.SetURL(target)
 		req.Out.URL.Path = strings.TrimPrefix(req.Out.URL.Path, "/serper")

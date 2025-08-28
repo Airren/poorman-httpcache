@@ -8,6 +8,7 @@ import (
 	"httpcache/pkg/proxy"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,8 +20,8 @@ import (
 
 func NewCache(cfg pkg.Config, logger *slog.Logger) (*cache.Cache, error) {
 	cache, err := cache.New(
-		cache.WithAdapter(cache.NewRedisAdapter(&redis.ClusterOptions{
-			Addrs:    []string{cfg.RedisHost},
+		cache.WithAdapter(cache.NewRedisAdapter(&redis.RingOptions{
+			Addrs:    map[string]string{"server0": fmt.Sprintf("%s:%d", cfg.RedisHost, cfg.RedisPort)},
 			Username: cfg.RedisUsername,
 			Password: cfg.RedisPassword,
 		}, logger)),
@@ -38,9 +39,15 @@ func NewCache(cfg pkg.Config, logger *slog.Logger) (*cache.Cache, error) {
 }
 
 func NewJinaProxy(cache *cache.Cache, cfg pkg.Config, logger *slog.Logger) (http.Handler, error) {
+	target, err := url.Parse("https://r.jina.ai")
+	if err != nil {
+		logger.Error("Failed to parse Jina target URL", "error", err)
+		return nil, err
+	}
+
 	rp, err := proxy.New(
 		proxy.WithRewrites(
-			proxy.RewriteJinaPath("https://r.jina.ai"),
+			proxy.RewriteJinaPath(target),
 			// proxy.ReplaceJinaKey(cfg.JinaAPIKey),
 			proxy.DebugRequest(logger),
 		),
@@ -53,9 +60,15 @@ func NewJinaProxy(cache *cache.Cache, cfg pkg.Config, logger *slog.Logger) (http
 }
 
 func NewSerperProxy(cache *cache.Cache, cfg pkg.Config, logger *slog.Logger) (http.Handler, error) {
+	target, err := url.Parse("https://google.serper.dev")
+	if err != nil {
+		logger.Error("Failed to parse Serper target URL", "error", err)
+		return nil, err
+	}
+
 	rp, err := proxy.New(
 		proxy.WithRewrites(
-			proxy.RewriteSerperPath("https://google.serper.dev"),
+			proxy.RewriteSerperPath(target),
 			// proxy.ReplaceSerperKey(cfg.SerperAPIKey),
 			proxy.DebugRequest(logger),
 		),
