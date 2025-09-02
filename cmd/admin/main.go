@@ -4,14 +4,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"httpcache/pkg"
-	"httpcache/pkg/api"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/MiroMindAI/miro-httpcache/pkg"
+	"github.com/MiroMindAI/miro-httpcache/pkg/api"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"

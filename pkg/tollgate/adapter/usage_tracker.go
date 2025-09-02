@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"httpcache/pkg/dbsqlc"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )

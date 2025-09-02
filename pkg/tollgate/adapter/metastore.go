@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"httpcache/pkg/dbsqlc"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
 
 	"golang.org/x/sync/singleflight"
 )

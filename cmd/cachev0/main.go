@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"httpcache/pkg"
-	"httpcache/pkg/cache"
-	"httpcache/pkg/proxy"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -13,6 +10,10 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/MiroMindAI/miro-httpcache/pkg"
+	"github.com/MiroMindAI/miro-httpcache/pkg/cache"
+	"github.com/MiroMindAI/miro-httpcache/pkg/proxy"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/redis/go-redis/v9"

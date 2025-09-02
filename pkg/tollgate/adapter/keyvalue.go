@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"httpcache/pkg/dbsqlc"
-	"httpcache/pkg/tollgate"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
+	"github.com/MiroMindAI/miro-httpcache/pkg/tollgate"
 
 	"github.com/redis/go-redis/v9"
 )

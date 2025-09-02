@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"httpcache/pkg/dbsqlc"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
 
 	"github.com/jackc/pgx/v5"
 )

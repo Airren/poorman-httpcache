@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"httpcache/pkg/dbsqlc"
-	"httpcache/pkg/tollgate"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
+	"github.com/MiroMindAI/miro-httpcache/pkg/tollgate"
 
 	"github.com/redis/go-redis/v9"
 )
