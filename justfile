@@ -42,3 +42,19 @@ deploy binary: (build binary)
 [group('deploy')]
 kill binary:
 	kill -9 $$(cat -p "{{justfile_directory()}}"/bin/save_pid.txt) && rm {{justfile_directory()}}/bin/save_pid.txt
+
+[group('lint')]
+golang_lint := if which("golangci-lint") != "" { which("golangci-lint") } else { "`go env GOPATH`/bin/golangci-lint" }
+
+lint:
+    #!/usr/bin/env bash
+    set -e
+    if ! command -v golangci-lint &>/dev/null; then
+        export GO111MODULE=on
+        GOLANG_LINT_TMP_DIR="$(mktemp -d)"
+        cd "$GOLANG_LINT_TMP_DIR"
+        go mod init tmp
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.4.0
+        rm -rf "$GOLANG_LINT_TMP_DIR"
+    fi
+    "$golang_lint" run ./...
