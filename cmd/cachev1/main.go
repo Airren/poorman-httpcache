@@ -3,11 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"httpcache/pkg"
-	"httpcache/pkg/cache"
-	"httpcache/pkg/proxy"
-	"httpcache/pkg/tollgate"
-	"httpcache/pkg/tollgate/adapter"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -16,6 +11,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/MiroMindAI/miro-httpcache/pkg"
+	"github.com/MiroMindAI/miro-httpcache/pkg/cache"
+	"github.com/MiroMindAI/miro-httpcache/pkg/proxy"
+	"github.com/MiroMindAI/miro-httpcache/pkg/tollgate"
+	"github.com/MiroMindAI/miro-httpcache/pkg/tollgate/adapter"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/redis/go-redis/v9"

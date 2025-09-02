@@ -6,8 +6,8 @@ import (
 	"database/sql"
 	"errors"
 
-	"httpcache/pkg/dbsqlc"
-	"httpcache/pkg/tollgate"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
+	"github.com/MiroMindAI/miro-httpcache/pkg/tollgate"
 )
 
 // Postgres implements the tollgate.Adapter interface using PostgreSQL

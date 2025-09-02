@@ -3,10 +3,11 @@ package api
 import (
 	"embed"
 	"encoding/json"
-	"httpcache/pkg/admin"
-	"httpcache/pkg/dbsqlc"
 	"log/slog"
 	"net/http"
+
+	"github.com/MiroMindAI/miro-httpcache/pkg/admin"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
 
 	"github.com/jackc/pgx/v5"
 	openapi_types "github.com/oapi-codegen/runtime/types"

@@ -1,4 +1,4 @@
-module httpcache
+module github.com/MiroMindAI/miro-httpcache
 
 go 1.24.6
 

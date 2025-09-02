@@ -6,14 +6,15 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"httpcache/pkg"
-	"httpcache/pkg/dbsqlc"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/MiroMindAI/miro-httpcache/pkg"
+	"github.com/MiroMindAI/miro-httpcache/pkg/dbsqlc"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"

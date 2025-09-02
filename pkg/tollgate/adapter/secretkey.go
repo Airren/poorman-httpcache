@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"httpcache/pkg/tollgate"
+	"github.com/MiroMindAI/miro-httpcache/pkg/tollgate"
 )
 
 // SecretKey is an adapter that validates against a secret key
